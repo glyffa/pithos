@@ -79,6 +79,18 @@ BACKGROUND_SVG = '''
 <svg><rect y="0" x="0" height="{px}" width="{px}" style="fill:{fg}" /></svg>
 '''
 
+def _find_rating_icon(theme, icon_name, color, fallback = "image-missing"):                                      
+    """Find the rating icon from the theme or use the fallback"""                                                          
+    icon = theme.lookup_icon(icon_name, 48, 0)                                                                             
+    if icon is None:                                                                                                       
+        logging.debug(f"Could not find the rating icon: '{icon_name}'")                                                    
+        icon = theme.lookup_icon(fallback, 48, 0)                                                                          
+    if icon is None:                                                                                                       
+        msg = f'Unable to find icon for "{icon_name}" or fallback "{fallback}"'                                            
+        raise ValueError(msg)                                                                                              
+    return icon.load_symbolic(color, color, color, color)
+    
+
 class PseudoGst(Enum):
     """Create aliases to Gst.State so that we can add our own BUFFERING Pseudo state"""
     PLAYING = 1
@@ -195,22 +207,26 @@ class CellRendererAlbumArt(Gtk.CellRenderer):
         # Pithos requires an icon theme with symbolic icons.
 
         # Manually color audio-x-generic-symbolic 48px icon to be used as part of the "default cover".
-        info = current_theme.lookup_icon('audio-x-generic-symbolic', 48, 0)
-        self.generic_audio_icon, was_symbolic = info.load_symbolic(bg_color, bg_color, bg_color, bg_color)
-
+        self.generic_audio_icon, was_symbolic = _find_rating_icon(
+            current_theme, 'audio-x-generic-symbolic', bg_color
+        )
+        
         # We request 24px icons because what we really want is 12px icons,
         # and they doesn't exist in many(or any?) icon themes. We then manually color
         # and scale them down to 12px.
-        info = current_theme.lookup_icon('emblem-favorite-symbolic', 24, 0)
-        icon, was_symbolic = info.load_symbolic(fg_color, fg_color, fg_color, fg_color)
+        icon, was_symbolic = _find_rating_icon(                                                                            
+              current_theme, "emblem-favorite-symbolic", fg_color                                                            
+        )
         self.love_icon = icon.scale_simple(12, 12, GdkPixbuf.InterpType.BILINEAR)
 
-        info = current_theme.lookup_icon('dialog-error-symbolic', 24, 0)
-        icon, was_symbolic = info.load_symbolic(fg_color, fg_color, fg_color, fg_color)
+        icon, was_symbolic = _find_rating_icon(
+            current_theme, 'dialog-error-symbolic', fg_color
+        )
         self.ban_icon = icon.scale_simple(12, 12, GdkPixbuf.InterpType.BILINEAR)
 
-        info = current_theme.lookup_icon('go-jump-symbolic', 24, 0)
-        icon, was_symbolic = info.load_symbolic(fg_color, fg_color, fg_color, fg_color)
+        icon, was_symbolic = _find_rating_icon(
+            current_theme, 'go-jump-symbolic', fg_color
+        )
         self.tired_icon = icon.scale_simple(12, 12, GdkPixbuf.InterpType.BILINEAR)
 
 @Gtk.Template(resource_path='/io/github/Pithos/ui/PithosWindow.ui')
